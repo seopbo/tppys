@@ -1,0 +1,91 @@
+# Set the ARGs
+ARG BASE_IMAGE=ubuntu:18.04
+
+FROM ${BASE_IMAGE}
+LABEL maintainer="bsk0130@gmail.com"
+
+# User env variables
+ENV USER nick
+ENV UID 1000
+ENV HOME /home/${USER}
+
+# Install libraries
+RUN apt update -y && \
+    DEBIAN_FRONTEND=noninteractive apt install -y \
+    sudo \
+    git \
+    apt-utils \
+    make \
+    build-essential \
+    libssl-dev \
+    zlib1g-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    wget \
+    curl \
+    llvm \
+    libncursesw5-dev \
+    xz-utils \
+    tk-dev \
+    libxmlsec1-dev \
+    libffi-dev \
+    liblzma-dev \
+    libfreetype6-dev \
+    libhdf5-serial-dev \
+    libpng-dev \
+    libzmq3-dev \
+    locales \
+    gcc \
+    g++ \
+    libpcre3-dev \
+    rsync \
+    tar \
+    unzip \
+    libopenblas-base \
+    vim \
+    tmux
+
+# Set language
+RUN locale-gen ko_KR.UTF-8
+ENV LC_ALL ko_KR.UTF-8
+ENV LANG ko_KR.UTF-8
+
+# Add user to sudo group
+RUN adduser --disabled-password --gecos "Default user" --uid ${UID} ${USER}
+RUN adduser ${USER} sudo
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
+# Install OpenJDK-8
+RUN apt update && \
+    apt install -y openjdk-8-jdk && \
+    apt install -y ant && \
+    apt clean;
+
+# Fix certificate issues
+RUN apt update && \
+    apt install ca-certificates-java && \
+    apt clean && \
+    update-ca-certificates -f;
+
+# Setup JAVA_HOME -- useful for docker commandline
+ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
+RUN export JAVA_HOME
+
+RUN echo "export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64" >> ~/.bashrc
+RUN apt clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Install python by conda
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py38_23.3.1-0-Linux-x86_64.sh -O ~/miniconda.sh && \
+    /bin/bash ~/miniconda.sh -b -p /opt/conda && \
+    rm ~/miniconda.sh && \
+    /opt/conda/bin/conda clean -tipy && \
+    ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
+    echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
+    echo "conda activate base" >> ~/.bashrc
+RUN chmod 777 -R /opt/conda
+
+# Authorize home directory
+WORKDIR ${HOME}
+RUN chown -R ${UID} ${HOME}
+USER ${USER}
