@@ -21,11 +21,11 @@ def get_args():
     parser = ArgumentParser()
     io_group = parser.add_argument_group("io")
     io_group.add_argument("--input_dirpath")
-    io_group.add_argument("--input_file_extension")
+    io_group.add_argument("--input_file_extension", default="gz")
     io_group.add_argument("--pretrained_model_name_or_path")
     io_group.add_argument("--output_dirpath")
     spark_group = parser.add_argument_group("spark")
-    spark_group.add_argument("--executor_memory")
+    spark_group.add_argument("--executor_memory", type=str, default="2g")
     args = parser.parse_args()
     return args
 
